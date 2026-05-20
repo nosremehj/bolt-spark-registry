@@ -1,0 +1,374 @@
+{
+  "info": {
+    "_postman_id": "bolt-challenger-clientes",
+    "name": "Bolt Challenger - Cadastro de Clientes",
+    "description": "Coleção para testar a API REST do desafio técnico.\n\n**Pré-requisito:** aplicação rodando em http://localhost:8082\n```bash\n./mvnw spring-boot:run\n```\n\n**Ordem sugerida:** pasta \"Fluxo principal\" (1 → 7).\n\n**ViaCEP:** cadastros usam CEPs reais; é necessário acesso à internet.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "clienteId",
+      "value": ""
+    },
+    {
+      "key": "documento",
+      "value": "52998224725"
+    },
+    {
+      "key": "numeroInstalacao",
+      "value": "INST-1001"
+    }
+  ],
+  "item": [
+    {
+      "name": "Fluxo principal",
+      "description": "Execute na ordem numérica. O passo 1 grava automaticamente o {{clienteId}}.",
+      "item": [
+        {
+          "name": "1. Cadastrar cliente (MG)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const ts = Date.now();",
+                  "pm.collectionVariables.set('documento', '529982247' + String(ts % 100).padStart(2, '0'));",
+                  "pm.collectionVariables.set('numeroInstalacao', 'INST-' + ts);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('clienteId', body.id);",
+                  "    pm.test('Retornou id do cliente', () => pm.expect(body.id).to.be.a('number'));",
+                  "    pm.test('UF MG na unidade', () => pm.expect(body.unidadesConsumidoras[0].endereco.uf).to.eql('MG'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Maria Souza\",\n  \"documento\": \"{{documento}}\",\n  \"endereco\": {\n    \"cep\": \"30130010\",\n    \"complemento\": \"Apto 101\"\n  },\n  \"unidadesConsumidoras\": [\n    {\n      \"nome\": \"Minha casa\",\n      \"numeroInstalacao\": \"{{numeroInstalacao}}\",\n      \"endereco\": {\n        \"cep\": \"30130010\"\n      }\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/clientes",
+            "description": "CEP 30130-010 = Belo Horizonte/MG."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Buscar cliente por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Mesmo id cadastrado', () => {",
+                  "    pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('clienteId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/clientes/{{clienteId}}",
+            "description": "Requer {{clienteId}} do passo 1."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Listar todos os clientes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/clientes"
+          },
+          "response": []
+        },
+        {
+          "name": "4. Listar últimos 20 clientes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('No máximo 20 registros', () => pm.expect(pm.response.json().length).to.be.at.most(20));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/clientes/recentes",
+            "description": "Ordenação decrescente por data de cadastro."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Atualizar cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Nome atualizado', () => pm.expect(pm.response.json().nome).to.eql('Maria Souza Atualizada'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Maria Souza Atualizada\",\n  \"documento\": \"{{documento}}\",\n  \"endereco\": {\n    \"cep\": \"30130010\",\n    \"complemento\": \"Apto 202\"\n  },\n  \"unidadesConsumidoras\": [\n    {\n      \"nome\": \"Minha casa\",\n      \"numeroInstalacao\": \"{{numeroInstalacao}}\",\n      \"endereco\": {\n        \"cep\": \"30130010\"\n      }\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/clientes/{{clienteId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "6. Remover cliente (exclusão lógica)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/clientes/{{clienteId}}",
+            "description": "Define ativo = false. Não remove fisicamente do banco."
+          },
+          "response": []
+        },
+        {
+          "name": "7. Buscar após remoção (esperado 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/clientes/{{clienteId}}",
+            "description": "Cliente inativo não aparece nas consultas."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cenários de erro",
+      "description": "Validação de regras de negócio. Execute após o fluxo principal ou reinicie o banco H2.",
+      "item": [
+        {
+          "name": "Cadastrar com UC em SP (esperado 400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('documento', '11144477735');",
+                  "pm.collectionVariables.set('numeroInstalacao', 'INST-SP-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Teste SP\",\n  \"documento\": \"{{documento}}\",\n  \"endereco\": {\n    \"cep\": \"20040020\"\n  },\n  \"unidadesConsumidoras\": [\n    {\n      \"nome\": \"Comércio\",\n      \"numeroInstalacao\": \"{{numeroInstalacao}}\",\n      \"endereco\": {\n        \"cep\": \"01310100\"\n      }\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/clientes",
+            "description": "CEP 01310-100 = São Paulo/SP. Estados SP, RS e PR não são atendidos nas UCs."
+          },
+          "response": []
+        },
+        {
+          "name": "Documento duplicado (esperado 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409 Conflict', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Duplicado\",\n  \"documento\": \"{{documento}}\",\n  \"endereco\": {\n    \"cep\": \"30130010\"\n  },\n  \"unidadesConsumidoras\": [\n    {\n      \"nome\": \"Outra UC\",\n      \"numeroInstalacao\": \"INST-DUP-{{$timestamp}}\",\n      \"endereco\": {\n        \"cep\": \"30130010\"\n      }\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/clientes",
+            "description": "Use o mesmo {{documento}} do último cadastro bem-sucedido (passo 1 do fluxo principal)."
+          },
+          "response": []
+        },
+        {
+          "name": "Número de instalação duplicado (esperado 409)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('documento', '98765432100');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409 Conflict', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Outro Cliente\",\n  \"documento\": \"{{documento}}\",\n  \"endereco\": {\n    \"cep\": \"30130010\"\n  },\n  \"unidadesConsumidoras\": [\n    {\n      \"nome\": \"UC repetida\",\n      \"numeroInstalacao\": \"{{numeroInstalacao}}\",\n      \"endereco\": {\n        \"cep\": \"30130010\"\n      }\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/clientes",
+            "description": "Reutiliza {{numeroInstalacao}} já cadastrado em outro cliente."
+          },
+          "response": []
+        },
+        {
+          "name": "Cliente não encontrado (esperado 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/clientes/999999"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cadastro avulso (RJ)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Carlos Rio\",\n  \"documento\": \"12345678909\",\n  \"endereco\": {\n    \"cep\": \"20040020\",\n    \"complemento\": \"Sala 3\"\n  },\n  \"unidadesConsumidoras\": [\n    {\n      \"nome\": \"Meu comércio\",\n      \"numeroInstalacao\": \"INST-RJ-001\",\n      \"endereco\": {\n        \"cep\": \"20040020\"\n      }\n    }\n  ]\n}"
+        },
+        "url": "{{baseUrl}}/api/clientes",
+        "description": "CEP 20040-020 = Rio de Janeiro/RJ. Segundo cliente de exemplo (sem MG, sem SP/RS/PR na UC)."
+      },
+      "response": []
+    }
+  ]
+}
