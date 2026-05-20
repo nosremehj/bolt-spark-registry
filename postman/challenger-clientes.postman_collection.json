@@ -2,9 +2,57 @@
   "info": {
     "_postman_id": "bolt-challenger-clientes",
     "name": "Bolt Challenger - Cadastro de Clientes",
-    "description": "Coleção para testar a API REST do desafio técnico.\n\n**Pré-requisito:** aplicação rodando em http://localhost:8082\n```bash\n./mvnw spring-boot:run\n```\n\n**Ordem sugerida:** pasta \"Fluxo principal\" (1 → 7).\n\n**ViaCEP:** cadastros usam CEPs reais; é necessário acesso à internet.",
+    "description": "Coleção para testar a API REST do desafio técnico.\n\n**Pré-requisito:** aplicação rodando em http://localhost:8082\n```bash\n./mvnw spring-boot:run\n```\n\n**Ordem sugerida:** pasta \"Fluxo principal\" (1 → 7).\n\n**ViaCEP:** cadastros usam CEPs reais; é necessário acesso à internet. As respostas incluem campos extras do ViaCEP (unidade, estado, região, IBGE, GIA, DDD, SIAFI); quando vazios, retornam textos como \"Sem unidade\" ou \"Sem GIA\".",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "utils = {",
+          "    camposEndereco: ['cep', 'logradouro', 'complemento', 'unidade', 'bairro', 'cidade', 'uf', 'estado', 'regiao', 'ibge', 'gia', 'ddd', 'siafi'],",
+          "    assertEstrutura(endereco) {",
+          "        this.camposEndereco.forEach((campo) => {",
+          "            pm.expect(endereco, `deve ter ${campo}`).to.have.property(campo);",
+          "        });",
+          "    },",
+          "    assertBeloHorizonteMg(endereco, complementoEsperado) {",
+          "        this.assertEstrutura(endereco);",
+          "        pm.expect(endereco.uf).to.eql('MG');",
+          "        pm.expect(endereco.cidade).to.eql('Belo Horizonte');",
+          "        pm.expect(endereco.estado).to.eql('Minas Gerais');",
+          "        pm.expect(endereco.regiao).to.eql('Sudeste');",
+          "        pm.expect(endereco.ibge).to.eql('3106200');",
+          "        pm.expect(endereco.ddd).to.eql('31');",
+          "        pm.expect(endereco.siafi).to.eql('4123');",
+          "        pm.expect(endereco.unidade).to.eql('Sem unidade');",
+          "        pm.expect(endereco.gia).to.eql('Sem GIA');",
+          "        if (complementoEsperado) {",
+          "            pm.expect(endereco.complemento).to.eql(complementoEsperado);",
+          "        }",
+          "    },",
+          "    assertRioDeJaneiroRj(endereco, complementoEsperado) {",
+          "        this.assertEstrutura(endereco);",
+          "        pm.expect(endereco.uf).to.eql('RJ');",
+          "        pm.expect(endereco.cidade).to.eql('Rio de Janeiro');",
+          "        pm.expect(endereco.estado).to.eql('Rio de Janeiro');",
+          "        pm.expect(endereco.regiao).to.eql('Sudeste');",
+          "        pm.expect(endereco.ibge).to.eql('3304557');",
+          "        pm.expect(endereco.ddd).to.eql('21');",
+          "        pm.expect(endereco.siafi).to.eql('6001');",
+          "        pm.expect(endereco.unidade).to.eql('Sem unidade');",
+          "        pm.expect(endereco.gia).to.eql('Sem GIA');",
+          "        if (complementoEsperado) {",
+          "            pm.expect(endereco.complemento).to.eql(complementoEsperado);",
+          "        }",
+          "    }",
+          "};"
+        ]
+      }
+    }
+  ],
   "variable": [
     {
       "key": "baseUrl",
@@ -52,7 +100,11 @@
                   "    const body = pm.response.json();",
                   "    pm.collectionVariables.set('clienteId', body.id);",
                   "    pm.test('Retornou id do cliente', () => pm.expect(body.id).to.be.a('number'));",
-                  "    pm.test('UF MG na unidade', () => pm.expect(body.unidadesConsumidoras[0].endereco.uf).to.eql('MG'));",
+                  "    pm.test('Endereço do cliente com dados ViaCEP (BH/MG)', () => utils.assertBeloHorizonteMg(body.endereco, 'Apto 101'));",
+                  "    pm.test('Endereço da UC com dados ViaCEP (BH/MG)', () => {",
+                  "        utils.assertBeloHorizonteMg(body.unidadesConsumidoras[0].endereco);",
+                  "        pm.expect(body.unidadesConsumidoras[0].endereco.complemento).to.eql('Sem complemento');",
+                  "    });",
                   "}"
                 ]
               }
@@ -71,7 +123,7 @@
               "raw": "{\n  \"nome\": \"Maria Souza\",\n  \"documento\": \"{{documento}}\",\n  \"endereco\": {\n    \"cep\": \"30130010\",\n    \"complemento\": \"Apto 101\"\n  },\n  \"unidadesConsumidoras\": [\n    {\n      \"nome\": \"Minha casa\",\n      \"numeroInstalacao\": \"{{numeroInstalacao}}\",\n      \"endereco\": {\n        \"cep\": \"30130010\"\n      }\n    }\n  ]\n}"
             },
             "url": "{{baseUrl}}/api/clientes",
-            "description": "CEP 30130-010 = Belo Horizonte/MG."
+            "description": "CEP 30130-010 = Belo Horizonte/MG (Praça Sete de Setembro). Valida campos ViaCEP: estado, região, IBGE, DDD, SIAFI; unidade e GIA vazios retornam \"Sem unidade\" e \"Sem GIA\"."
           },
           "response": []
         },
@@ -84,8 +136,14 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
                   "pm.test('Mesmo id cadastrado', () => {",
-                  "    pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('clienteId')));",
+                  "    pm.expect(body.id).to.eql(Number(pm.collectionVariables.get('clienteId')));",
+                  "});",
+                  "pm.test('Endereços persistem campos ViaCEP', () => {",
+                  "    utils.assertBeloHorizonteMg(body.endereco, 'Apto 101');",
+                  "    utils.assertBeloHorizonteMg(body.unidadesConsumidoras[0].endereco);",
+                  "    pm.expect(body.unidadesConsumidoras[0].endereco.complemento).to.eql('Sem complemento');",
                   "});"
                 ]
               }
@@ -108,7 +166,13 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('Retorna array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                  "const lista = pm.response.json();",
+                  "pm.test('Retorna array', () => pm.expect(lista).to.be.an('array'));",
+                  "pm.test('Cliente listado com campos ViaCEP no endereço', () => {",
+                  "    const cliente = lista.find((c) => c.id === Number(pm.collectionVariables.get('clienteId')));",
+                  "    pm.expect(cliente).to.not.be.undefined;",
+                  "    utils.assertBeloHorizonteMg(cliente.endereco, 'Apto 101');",
+                  "});"
                 ]
               }
             }
@@ -151,7 +215,12 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('Nome atualizado', () => pm.expect(pm.response.json().nome).to.eql('Maria Souza Atualizada'));"
+                  "const body = pm.response.json();",
+                  "pm.test('Nome atualizado', () => pm.expect(body.nome).to.eql('Maria Souza Atualizada'));",
+                  "pm.test('Atualização mantém campos ViaCEP', () => {",
+                  "    utils.assertBeloHorizonteMg(body.endereco, 'Apto 202');",
+                  "    utils.assertBeloHorizonteMg(body.unidadesConsumidoras[0].endereco);",
+                  "});"
                 ]
               }
             }
@@ -353,6 +422,36 @@
     },
     {
       "name": "Cadastro avulso (RJ)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const ts = Date.now();",
+              "pm.collectionVariables.set('documento', '123456789' + String(ts % 100).padStart(2, '0'));",
+              "pm.collectionVariables.set('numeroInstalacao', 'INST-RJ-' + ts);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) {",
+              "    const body = pm.response.json();",
+              "    pm.test('Endereço do cliente RJ com ViaCEP', () => utils.assertRioDeJaneiroRj(body.endereco, 'Sala 3'));",
+              "    pm.test('Endereço da UC RJ com ViaCEP', () => {",
+              "        utils.assertRioDeJaneiroRj(body.unidadesConsumidoras[0].endereco);",
+              "        pm.expect(body.unidadesConsumidoras[0].endereco.complemento).to.eql('Sem complemento');",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [
@@ -363,10 +462,10 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"nome\": \"Carlos Rio\",\n  \"documento\": \"12345678909\",\n  \"endereco\": {\n    \"cep\": \"20040020\",\n    \"complemento\": \"Sala 3\"\n  },\n  \"unidadesConsumidoras\": [\n    {\n      \"nome\": \"Meu comércio\",\n      \"numeroInstalacao\": \"INST-RJ-001\",\n      \"endereco\": {\n        \"cep\": \"20040020\"\n      }\n    }\n  ]\n}"
+          "raw": "{\n  \"nome\": \"Carlos Rio\",\n  \"documento\": \"{{documento}}\",\n  \"endereco\": {\n    \"cep\": \"20040020\",\n    \"complemento\": \"Sala 3\"\n  },\n  \"unidadesConsumidoras\": [\n    {\n      \"nome\": \"Meu comércio\",\n      \"numeroInstalacao\": \"{{numeroInstalacao}}\",\n      \"endereco\": {\n        \"cep\": \"20040020\"\n      }\n    }\n  ]\n}"
         },
         "url": "{{baseUrl}}/api/clientes",
-        "description": "CEP 20040-020 = Rio de Janeiro/RJ. Segundo cliente de exemplo (sem MG, sem SP/RS/PR na UC)."
+        "description": "CEP 20040-020 = Rio de Janeiro/RJ (Praça Pio X). Valida estado, região, IBGE, DDD e SIAFI do ViaCEP. Documento e instalação gerados no pré-request para evitar conflito em reexecuções."
       },
       "response": []
     }
