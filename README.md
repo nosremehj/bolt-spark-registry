@@ -91,6 +91,8 @@ Após isso vá em import, irá abrir uma janela. Você pode abrir o `postman/cha
 
 Após isso ele irá carregar toda a configuração da coleção e você conseguirá fazer os testes via postman. 
 
+<img width="370" height="458" alt="image" src="https://github.com/user-attachments/assets/c0c0c8e6-5574-4968-a995-d76c2a01318a" />
+
 ## Um pouco sobre a API e o projeto
 
 | Método | Endpoint | Descrição |
@@ -137,6 +139,13 @@ docker exec -it challenger-kafka /opt/kafka/bin/kafka-console-consumer.sh \
 ```
 Caso você queira optar por práticidade, fiz um arquivo .bat que já está com esse comando e você pode rodar para testar.
 `TopicoKafka.bat` (atalho).
+
+*Imagens referentes ao teste:*
+
+<img width="577" height="336" alt="image" src="https://github.com/user-attachments/assets/964acf6c-569d-4f32-9914-a77d2b64ab11" />
+
+<img width="1142" height="117" alt="image" src="https://github.com/user-attachments/assets/f9735713-c143-4110-9ecc-00c79b58dd94" />
+
 
 
 ## Estrutura do projeto
