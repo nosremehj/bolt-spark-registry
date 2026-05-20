@@ -1,5 +1,5 @@
 
-# Project Title
+# Bolt Spark Registry API
 
 A aplicação é uma API REST de cadastro de clientes, com foco em clientes que possuem unidades consumidoras (UCs) — cenário típico de energia/utilities.
 
@@ -80,7 +80,14 @@ No Swagger: **Authorize** → esquema `bearer-jwt` → cole o token após o logi
 Você pode importar a coleção que está dentro do projeto. 
 Você vai abrir a página do postman, vai ir no canto superior esquerdo nos três "pontinhos". 
 
+<img width="475" height="96" alt="image" src="https://github.com/user-attachments/assets/794d2b71-3782-4e94-9c8f-26cfe1cd41c2" />
+
 Após isso vá em import, irá abrir uma janela. Você pode abrir o `postman/challenger-clientes.postman_collection.json` onde está o arquivo e arrastar para essa janela ou clicar em files e ir até o `postman/challenger-clientes.postman_collection.json`, selecionar e abrir. 
+
+<img width="650" height="565" alt="image" src="https://github.com/user-attachments/assets/94e257e4-76b4-441d-bf6c-4548c18f2083" />
+
+<img width="787" height="353" alt="image" src="https://github.com/user-attachments/assets/90675d27-a33f-45e4-bb33-0b280218166a" />
+
 
 Após isso ele irá carregar toda a configuração da coleção e você conseguirá fazer os testes via postman. 
 
