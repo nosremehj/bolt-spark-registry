@@ -28,6 +28,7 @@ import com.bolt.tecnhical.challenger.web.dto.ClienteResponse;
 
 import jakarta.persistence.EntityManager;
 import com.bolt.tecnhical.challenger.integration.viacep.ViaCepClient;
+import com.bolt.tecnhical.challenger.messaging.AnaliseClienteMgNotifier;
 import com.bolt.tecnhical.challenger.repository.ClienteRepository;
 import com.bolt.tecnhical.challenger.repository.UnidadeConsumidoraRepository;
 import com.bolt.tecnhical.challenger.web.dto.ClienteRequest;
@@ -48,6 +49,9 @@ class ClienteServiceTest {
 
 	@Mock
 	private EntityManager entityManager;
+
+	@Mock
+	private AnaliseClienteMgNotifier analiseClienteMgNotifier;
 
 	@InjectMocks
 	private ClienteService clienteService;
@@ -117,6 +121,37 @@ class ClienteServiceTest {
 		clienteService.cadastrar(criarRequest("52998224725", "30130010", "INST-2001"));
 
 		verify(entityManager, never()).flush();
+	}
+
+	@Test
+	void deveNotificarAnaliseMgAposCadastrarClienteComUnidadeEmMg() {
+		when(clienteRepository.existsByDocumento(anyString())).thenReturn(false);
+		when(unidadeConsumidoraRepository.existsByNumeroInstalacao(anyString())).thenReturn(false);
+		when(viaCepClient.buscarEndereco(anyString(), any())).thenReturn(enderecoComUf("MG"));
+		when(clienteRepository.save(any(Cliente.class))).thenAnswer(invocation -> {
+			Cliente cliente = invocation.getArgument(0);
+			cliente.setId(10L);
+			return cliente;
+		});
+
+		clienteService.cadastrar(criarRequest("52998224725", "30130010", "INST-2001"));
+
+		verify(analiseClienteMgNotifier).notificarSeNecessario(any(Cliente.class));
+	}
+
+	@Test
+	void deveNotificarAnaliseMgAposAtualizarClienteComUnidadeEmMg() {
+		Cliente cliente = clienteComUnidade("52998224725", "INST-1001");
+		when(clienteRepository.findByIdAndAtivoTrue(1L)).thenReturn(Optional.of(cliente));
+		when(clienteRepository.existsByDocumentoAndIdNot(eq("52998224725"), eq(1L))).thenReturn(false);
+		when(unidadeConsumidoraRepository.existsByNumeroInstalacaoAndClienteIdNot(eq("INST-1001"), eq(1L)))
+				.thenReturn(false);
+		when(viaCepClient.buscarEndereco(anyString(), any())).thenReturn(enderecoComUf("MG"));
+		when(clienteRepository.save(any(Cliente.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		clienteService.atualizar(1L, criarRequest("529.982.247-25", "30130010", "INST-1001"));
+
+		verify(analiseClienteMgNotifier).notificarSeNecessario(cliente);
 	}
 
 	@Test

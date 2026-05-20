@@ -1,7 +1,10 @@
 package com.bolt.tecnhical.challenger.util;
 
+import java.util.List;
 import java.util.Set;
 
+import com.bolt.tecnhical.challenger.domain.Cliente;
+import com.bolt.tecnhical.challenger.domain.UnidadeConsumidora;
 import com.bolt.tecnhical.challenger.exception.BusinessException;
 import org.springframework.http.HttpStatus;
 
@@ -25,6 +28,17 @@ public final class EstadoUtil {
 
 	public static boolean possuiUnidadeEmMg(String uf) {
 		return UF_MG.equals(normalizarUf(uf));
+	}
+
+	public static boolean clientePossuiUnidadeEmMg(Cliente cliente) {
+		return !numerosInstalacaoEmMg(cliente).isEmpty();
+	}
+
+	public static List<String> numerosInstalacaoEmMg(Cliente cliente) {
+		return cliente.getUnidadesConsumidoras().stream()
+				.filter(unidade -> possuiUnidadeEmMg(unidade.getEndereco().getUf()))
+				.map(UnidadeConsumidora::getNumeroInstalacao)
+				.toList();
 	}
 
 	private static String normalizarUf(String uf) {
