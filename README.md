@@ -1,4 +1,4 @@
-# Cadastro de Clientes — Desafio Técnico Bolt
+# Cadastro de Clientes 
 
 API REST para cadastro, manutenção, remoção lógica e consulta de clientes com unidades consumidoras.
 
@@ -11,6 +11,7 @@ API REST para cadastro, manutenção, remoção lógica e consulta de clientes c
 - Spring Validation
 - SpringDoc OpenAPI (Swagger)
 - Spring Security (JWT stateless, mock de usuários)
+- Apache Kafka (apenas produtor)
 - Maven
 
 ## Campo documento
@@ -98,7 +99,7 @@ Os endereços (cliente e unidades) são resolvidos via [ViaCEP](https://viacep.c
 - Número de instalação único no sistema (não pode pertencer a outro cliente)
 - Unidades em **SP, RS ou PR** não são permitidas
 - Exclusão apenas lógica; consulta de inativos em `/api/clientes/inativos`
-- Cliente com unidade consumidora em **MG** dispara publicação no tópico Kafka `analise_cliente_mg` após commit da transação (cadastro ou atualização)
+- Cliente com unidade consumidora em **MG** dispara publicação **síncrona** no tópico Kafka `analise_cliente_mg` ainda **dentro da mesma transação** do cadastro ou atualização (se o broker falhar, a transação é revertida — ver secção Kafka abaixo)
 
 ## Kafka (`analise_cliente_mg`)
 
@@ -120,6 +121,8 @@ docker exec -it challenger-kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --from-beginning
 ```
 
+No Windows, o mesmo comando está em `TopicoKafka.bat` (atalho).
+
 Nos testes automatizados o Kafka fica desabilitado (`app.kafka.enabled=false`).
 
 ## Postman
@@ -132,6 +135,7 @@ Importe a coleção em `postman/challenger-clientes.postman_collection.json`.
 domain/          → entidades JPA
 repository/      → acesso a dados
 service/         → regras de negócio
+config/          → configuração global (ex.: OpenAPI com Bearer JWT)
 web/             → controllers REST
 web/dto/         → contratos de entrada e saída da API
 integration/     → cliente ViaCEP
@@ -145,5 +149,6 @@ security/        → JWT, propriedades, posse do cliente (mock), autorização p
 ## Justificativa de bibliotecas
 
 - **Flyway**: versionamento explícito do schema, alinhado à avaliação de organização.
-- **SpringDoc**: documentação interativa da API (diferencial do desafio).
-- **H2**: banco embarcado recomendado no enunciado, sem dependências externas para executar.
+- **SpringDoc**: documentação interativa da API.
+- **H2**: banco embarcado, sem dependências externas para executar.
+- **Kafka (produtor)**: atende ao fluxo de notificação para análise de clientes com UC em MG; broker externo via Docker em desenvolvimento.

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "bolt-challenger-clientes",
     "name": "Bolt Challenger - Cadastro de Clientes",
-    "description": "Coleção para testar a API REST do desafio técnico.\n\n**Pré-requisito:** aplicação rodando em http://localhost:8082\n```bash\n./mvnw spring-boot:run\n```\n\n**JWT:** antes do fluxo principal, execute **Autenticação → Login como admin**. O token é salvo em `{{accessToken}}` e aplicado como **Bearer** nas rotas `/api/clientes/**`. Para API sem segurança (`APP_SECURITY_ENABLED=false`), deixe `accessToken` vazio — algumas chamadas podem falhar dependendo da configuração.\n\n**Ordem sugerida:** \"Autenticação\" → pasta \"Fluxo principal\" (1 → 8).\n\n**ViaCEP:** cadastros usam CEPs reais; é necessário acesso à internet. As respostas incluem campos extras do ViaCEP (unidade, estado, região, IBGE, GIA, DDD, SIAFI); quando vazios, retornam textos como \"Sem unidade\" ou \"Sem GIA\".",
+    "description": "Coleção para testar a API REST do desafio técnico.\n\n**Pré-requisito:** aplicação rodando em http://localhost:8082\n```bash\n./mvnw spring-boot:run\n```\n\n**JWT:** antes do fluxo principal, execute **Autenticação → Login como admin**. O token é salvo em `{{accessToken}}` e aplicado como **Bearer** nas rotas `/api/clientes/**`. **Login como cliente** também preenche o token — use para testar cadastro e **GET / PUT / DELETE** só nos próprios IDs (sem listagens globais). Para API sem segurança (`APP_SECURITY_ENABLED=false`), deixe `accessToken` vazio — algumas chamadas podem falhar dependendo da configuração.\n\n**Ordem sugerida:** \"Autenticação\" → pasta \"Fluxo principal\" (1 → 8) com token **admin**.\n\n**Kafka:** cadastros com UC em MG publicam no tópico; sem broker o passo 1 pode retornar **503** (mensageria indisponível).\n\n**ViaCEP:** cadastros usam CEPs reais; é necessário acesso à internet. As respostas incluem campos extras do ViaCEP (unidade, estado, região, IBGE, GIA, DDD, SIAFI); quando vazios, retornam textos como \"Sem unidade\" ou \"Sem GIA\".",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -180,7 +180,7 @@
               "raw": "{\n  \"username\": \"{{clienteUsername}}\",\n  \"password\": \"{{clientePassword}}\"\n}"
             },
             "url": "{{baseUrl}}/api/auth/login",
-            "description": "Perfil cliente (cadastro + GET apenas dos próprios IDs criados nesta execução da API)."
+            "description": "Perfil **cliente**: **POST** cadastrar e **GET / PUT / DELETE** em `/api/clientes/{id}` apenas para registros que **ele cadastrou nesta execução** da API (rastreio em memória). Sem acesso às listagens globais (`GET /api/clientes`, `/recentes`, `/inativos`)."
           },
           "response": []
         }
@@ -188,7 +188,7 @@
     },
     {
       "name": "Fluxo principal",
-      "description": "Execute na ordem numérica após **Login como admin**. O passo 1 grava automaticamente o {{clienteId}}. O passo 8 lista clientes com exclusão lógica.",
+      "description": "Execute na ordem numérica após **Login como admin** (passos 3, 4 e 8 exigem perfil admin). O passo 1 grava automaticamente o {{clienteId}}. O passo 8 lista clientes com exclusão lógica.\n\n**Kafka:** o passo 1 cadastra UC em **MG** e dispara publicação síncrona; com o broker parado a API pode responder **503** — suba o Kafka (`docker compose up -d`) ou use `APP_KAFKA_ENABLED=false` para desenvolvimento sem mensageria.",
       "event": [
         {
           "listen": "prerequest",
@@ -251,7 +251,7 @@
               "raw": "{\n  \"nome\": \"Maria Souza\",\n  \"documento\": \"{{documento}}\",\n  \"endereco\": {\n    \"cep\": \"30130010\",\n    \"complemento\": \"Apto 101\"\n  },\n  \"unidadesConsumidoras\": [\n    {\n      \"nome\": \"Minha casa\",\n      \"numeroInstalacao\": \"{{numeroInstalacao}}\",\n      \"endereco\": {\n        \"cep\": \"30130010\"\n      }\n    }\n  ]\n}"
             },
             "url": "{{baseUrl}}/api/clientes",
-            "description": "CEP 30130-010 = Belo Horizonte/MG (Praça Sete de Setembro). Valida campos ViaCEP: estado, região, IBGE, DDD, SIAFI; unidade e GIA vazios retornam \"Sem unidade\" e \"Sem GIA\"."
+            "description": "CEP 30130-010 = Belo Horizonte/MG (Praça Sete de Setembro). Valida campos ViaCEP: estado, região, IBGE, DDD, SIAFI; unidade e GIA vazios retornam \"Sem unidade\" e \"Sem GIA\".\n\n**Esperado 201** com Kafka disponível (`APP_KAFKA_ENABLED=true`). Se o broker estiver indisponível, a resposta pode ser **503** (mensageria) e o cadastro não persiste."
           },
           "response": []
         },
