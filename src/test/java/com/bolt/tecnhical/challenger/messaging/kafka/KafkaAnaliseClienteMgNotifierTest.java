@@ -11,7 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import com.bolt.tecnhical.challenger.domain.Cliente;
 import com.bolt.tecnhical.challenger.domain.Endereco;
@@ -22,13 +21,13 @@ import com.bolt.tecnhical.challenger.messaging.AnaliseClienteMgEvent;
 class KafkaAnaliseClienteMgNotifierTest {
 
 	@Mock
-	private ApplicationEventPublisher eventPublisher;
+	private AnaliseClienteMgKafkaProducer kafkaProducer;
 
 	@InjectMocks
 	private KafkaAnaliseClienteMgNotifier notifier;
 
 	@Test
-	void devePublicarEventoQuandoClientePossuiUnidadeEmMg() {
+	void devePublicarNoKafkaQuandoClientePossuiUnidadeEmMg() {
 		Cliente cliente = clienteComUnidade("MG", "INST-MG-01");
 		cliente.setId(42L);
 		cliente.setDocumento("52998224725");
@@ -36,7 +35,7 @@ class KafkaAnaliseClienteMgNotifierTest {
 
 		notifier.notificarSeNecessario(cliente);
 
-		verify(eventPublisher).publishEvent(
+		verify(kafkaProducer).enviar(
 				new AnaliseClienteMgEvent(42L, "52998224725", "João Silva", List.of("INST-MG-01")));
 	}
 
@@ -52,17 +51,17 @@ class KafkaAnaliseClienteMgNotifierTest {
 
 		notifier.notificarSeNecessario(cliente);
 
-		verify(eventPublisher).publishEvent(
+		verify(kafkaProducer).enviar(
 				new AnaliseClienteMgEvent(1L, "52998224725", "Maria", List.of("INST-MG-01", "INST-MG-02")));
 	}
 
 	@Test
-	void naoDevePublicarEventoQuandoClienteNaoPossuiUnidadeEmMg() {
+	void naoDevePublicarQuandoClienteNaoPossuiUnidadeEmMg() {
 		Cliente cliente = clienteComUnidade("RJ", "INST-RJ-01");
 
 		notifier.notificarSeNecessario(cliente);
 
-		verify(eventPublisher, never()).publishEvent(any());
+		verify(kafkaProducer, never()).enviar(any());
 	}
 
 	private Cliente clienteComUnidade(String uf, String numeroInstalacao) {

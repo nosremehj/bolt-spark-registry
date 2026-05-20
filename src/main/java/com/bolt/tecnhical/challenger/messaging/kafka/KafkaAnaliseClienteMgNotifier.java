@@ -1,7 +1,6 @@
 package com.bolt.tecnhical.challenger.messaging.kafka;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import com.bolt.tecnhical.challenger.domain.Cliente;
@@ -13,10 +12,10 @@ import com.bolt.tecnhical.challenger.util.EstadoUtil;
 @ConditionalOnProperty(name = "app.kafka.enabled", havingValue = "true", matchIfMissing = true)
 public class KafkaAnaliseClienteMgNotifier implements AnaliseClienteMgNotifier {
 
-	private final ApplicationEventPublisher eventPublisher;
+	private final AnaliseClienteMgKafkaProducer kafkaProducer;
 
-	public KafkaAnaliseClienteMgNotifier(ApplicationEventPublisher eventPublisher) {
-		this.eventPublisher = eventPublisher;
+	public KafkaAnaliseClienteMgNotifier(AnaliseClienteMgKafkaProducer kafkaProducer) {
+		this.kafkaProducer = kafkaProducer;
 	}
 
 	@Override
@@ -24,7 +23,7 @@ public class KafkaAnaliseClienteMgNotifier implements AnaliseClienteMgNotifier {
 		if (!EstadoUtil.clientePossuiUnidadeEmMg(cliente)) {
 			return;
 		}
-		eventPublisher.publishEvent(new AnaliseClienteMgEvent(
+		kafkaProducer.enviar(new AnaliseClienteMgEvent(
 				cliente.getId(),
 				cliente.getDocumento(),
 				cliente.getNome(),

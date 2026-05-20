@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "bolt-challenger-clientes",
     "name": "Bolt Challenger - Cadastro de Clientes",
-    "description": "Coleção para testar a API REST do desafio técnico.\n\n**Pré-requisito:** aplicação rodando em http://localhost:8082\n```bash\n./mvnw spring-boot:run\n```\n\n**Ordem sugerida:** pasta \"Fluxo principal\" (1 → 8).\n\n**ViaCEP:** cadastros usam CEPs reais; é necessário acesso à internet. As respostas incluem campos extras do ViaCEP (unidade, estado, região, IBGE, GIA, DDD, SIAFI); quando vazios, retornam textos como \"Sem unidade\" ou \"Sem GIA\".",
+    "description": "Coleção para testar a API REST do desafio técnico.\n\n**Pré-requisito:** aplicação rodando em http://localhost:8082\n```bash\n./mvnw spring-boot:run\n```\n\n**JWT:** antes do fluxo principal, execute **Autenticação → Login como admin**. O token é salvo em `{{accessToken}}` e aplicado como **Bearer** nas rotas `/api/clientes/**`. Para API sem segurança (`APP_SECURITY_ENABLED=false`), deixe `accessToken` vazio — algumas chamadas podem falhar dependendo da configuração.\n\n**Ordem sugerida:** \"Autenticação\" → pasta \"Fluxo principal\" (1 → 8).\n\n**ViaCEP:** cadastros usam CEPs reais; é necessário acesso à internet. As respostas incluem campos extras do ViaCEP (unidade, estado, região, IBGE, GIA, DDD, SIAFI); quando vazios, retornam textos como \"Sem unidade\" ou \"Sem GIA\".",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -69,12 +69,140 @@
     {
       "key": "numeroInstalacao",
       "value": "INST-1001"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "adminUsername",
+      "value": "admin"
+    },
+    {
+      "key": "adminPassword",
+      "value": "admin123"
+    },
+    {
+      "key": "clienteUsername",
+      "value": "cliente"
+    },
+    {
+      "key": "clientePassword",
+      "value": "cliente123"
     }
   ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
   "item": [
     {
+      "name": "Autenticação",
+      "description": "Obtenção do JWT (expira em 1 hora). **`Login como admin`** deve rodar antes do fluxo principal. Essas requisições usam auth \"No Auth\" para não enviar Bearer.",
+      "item": [
+        {
+          "name": "Login como admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', b.accessToken);",
+                  "    pm.test('Retornou accessToken', () => pm.expect(b.accessToken).to.be.a('string').that.is.not.empty);",
+                  "    pm.expect(b.tokenType).to.eql('Bearer');",
+                  "    pm.expect(b.expiresInSeconds).to.be.a('number');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Credenciais padrão na coleção: admin / admin123. Sobrescreva `adminUsername` e `adminPassword` nas variáveis da coleção se necessário."
+          },
+          "response": []
+        },
+        {
+          "name": "Login como cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', b.accessToken);",
+                  "    pm.test('Retornou accessToken', () => pm.expect(b.accessToken).to.be.a('string').that.is.not.empty);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{clienteUsername}}\",\n  \"password\": \"{{clientePassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Perfil cliente (cadastro + GET apenas dos próprios IDs criados nesta execução da API)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Fluxo principal",
-      "description": "Execute na ordem numérica. O passo 1 grava automaticamente o {{clienteId}}. O passo 8 lista clientes com exclusão lógica.",
+      "description": "Execute na ordem numérica após **Login como admin**. O passo 1 grava automaticamente o {{clienteId}}. O passo 8 lista clientes com exclusão lógica.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const t = pm.collectionVariables.get('accessToken');",
+              "if (!t || !String(t).trim()) {",
+              "    console.warn('Coleção: accessToken vazio. Execute primeiro Autenticação > Login como admin (ou desative a segurança na API).');",
+              "}"
+            ]
+          }
+        }
+      ],
       "item": [
         {
           "name": "1. Cadastrar cliente (MG)",
@@ -318,7 +446,7 @@
     },
     {
       "name": "Cenários de erro",
-      "description": "Validação de regras de negócio. Execute após o fluxo principal ou reinicie o banco H2.",
+      "description": "Validação de regras de negócio. **Obter token (admin)** antes. Execute após o fluxo principal ou reinicie o banco H2.",
       "item": [
         {
           "name": "Cadastrar com UC em SP (esperado 400)",

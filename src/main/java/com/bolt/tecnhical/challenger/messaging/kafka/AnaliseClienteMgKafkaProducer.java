@@ -1,6 +1,9 @@
 package com.bolt.tecnhical.challenger.messaging.kafka;
 
 import java.time.Instant;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+import com.bolt.tecnhical.challenger.exception.KafkaPublishException;
 import com.bolt.tecnhical.challenger.messaging.AnaliseClienteMgEvent;
 
 @Component
@@ -37,17 +41,41 @@ public class AnaliseClienteMgKafkaProducer {
 		Long clienteId = event.clienteId();
 		String chave = String.valueOf(clienteId);
 
-		kafkaTemplate.send(topico, chave, mensagem)
-				.whenComplete((resultado, erro) -> {
-					if (erro != null) {
-						log.error("Falha ao publicar no tópico {} para cliente {}", topico, clienteId, erro);
-						return;
-					}
-					log.info("Mensagem publicada no tópico {} para cliente {} (partição {})",
-							topico,
-							clienteId,
-							resultado.getRecordMetadata().partition());
-				});
+		try {
+			var resultado = kafkaTemplate.send(topico, chave, mensagem)
+					.get(properties.sendTimeoutSeconds(), TimeUnit.SECONDS);
+			log.info("Mensagem publicada no tópico {} para cliente {} (partição {})",
+					topico,
+					clienteId,
+					resultado.getRecordMetadata().partition());
+		}
+		catch (TimeoutException ex) {
+			throw new KafkaPublishException(
+					"Serviço de mensageria indisponível: tempo esgotado ao publicar análise do cliente. "
+							+ "Verifique se o Kafka está em execução.",
+					ex);
+		}
+		catch (InterruptedException ex) {
+			Thread.currentThread().interrupt();
+			throw new KafkaPublishException(
+					"Serviço de mensageria indisponível: publicação interrompida.", ex);
+		}
+		catch (ExecutionException ex) {
+			Throwable causa = ex.getCause() != null ? ex.getCause() : ex;
+			log.error("Falha ao publicar no tópico {} para cliente {}", topico, clienteId, causa);
+			throw new KafkaPublishException(
+					"Serviço de mensageria indisponível: não foi possível publicar a análise do cliente. "
+							+ "Verifique se o Kafka está em execução.",
+					causa);
+		}
+		catch (RuntimeException ex) {
+			// send() síncrono (ex.: KafkaException) não passa por ExecutionException
+			log.error("Falha ao publicar no tópico {} para cliente {}", topico, clienteId, ex);
+			throw new KafkaPublishException(
+					"Serviço de mensageria indisponível: não foi possível publicar a análise do cliente. "
+							+ "Verifique se o Kafka está em execução.",
+					ex);
+		}
 	}
 
 }

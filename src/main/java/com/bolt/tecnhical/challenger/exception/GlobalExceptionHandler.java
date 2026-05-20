@@ -6,6 +6,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -17,6 +19,30 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
 				.body(ErrorResponse.of(HttpStatus.NOT_FOUND.value(), "Not Found", ex.getMessage()));
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+		String message = ex.getMessage() != null && !ex.getMessage().isBlank()
+				? ex.getMessage()
+				: "Você não tem permissão para este recurso";
+		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+				.body(ErrorResponse.of(HttpStatus.FORBIDDEN.value(), "Forbidden", message));
+	}
+
+	@ExceptionHandler(BadCredentialsException.class)
+	public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+				.body(ErrorResponse.of(HttpStatus.UNAUTHORIZED.value(), "Unauthorized", "Usuário ou senha inválidos"));
+	}
+
+	@ExceptionHandler(KafkaPublishException.class)
+	public ResponseEntity<ErrorResponse> handleKafkaPublish(KafkaPublishException ex) {
+		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.body(ErrorResponse.of(
+						HttpStatus.SERVICE_UNAVAILABLE.value(),
+						"Service Unavailable",
+						ex.getMessage()));
 	}
 
 	@ExceptionHandler(BusinessException.class)

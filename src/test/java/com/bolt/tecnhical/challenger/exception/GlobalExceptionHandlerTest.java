@@ -18,6 +18,18 @@ class GlobalExceptionHandlerTest {
 	}
 
 	@Test
+	void deveRetornar503QuandoKafkaIndisponivel() {
+		var ex = new KafkaPublishException("Serviço de mensageria indisponível");
+
+		ResponseEntity<ErrorResponse> response = handler.handleKafkaPublish(ex);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+		assertThat(response.getBody()).isNotNull();
+		assertThat(response.getBody().status()).isEqualTo(503);
+		assertThat(response.getBody().message()).contains("mensageria indisponível");
+	}
+
+	@Test
 	void deveRetornar409ParaViolacaoDeNumeroInstalacao() {
 		var ex = new DataIntegrityViolationException(
 				"falha",
