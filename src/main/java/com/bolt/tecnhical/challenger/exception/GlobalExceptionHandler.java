@@ -27,8 +27,10 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-		List<String> details = ex.getBindingResult().getFieldErrors().stream()
-				.map(error -> error.getField() + ": " + error.getDefaultMessage())
+		List<FieldErrorDetail> details = ex.getBindingResult().getFieldErrors().stream()
+				.map(error -> new FieldErrorDetail(
+						CampoValidacaoFormatter.formatar(error.getField()),
+						error.getDefaultMessage()))
 				.toList();
 		return ResponseEntity.badRequest()
 				.body(ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), "Bad Request", "Dados inválidos", details));

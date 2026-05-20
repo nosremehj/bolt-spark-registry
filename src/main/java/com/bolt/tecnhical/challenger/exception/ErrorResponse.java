@@ -8,13 +8,13 @@ public record ErrorResponse(
 		int status,
 		String error,
 		String message,
-		List<String> details) {
+		List<FieldErrorDetail> details) {
 
 	public static ErrorResponse of(int status, String error, String message) {
 		return new ErrorResponse(Instant.now(), status, error, message, List.of());
 	}
 
-	public static ErrorResponse of(int status, String error, String message, List<String> details) {
+	public static ErrorResponse of(int status, String error, String message, List<FieldErrorDetail> details) {
 		return new ErrorResponse(Instant.now(), status, error, message, details);
 	}
 
