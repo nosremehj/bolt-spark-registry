@@ -2,6 +2,7 @@ package com.bolt.tecnhical.challenger.exception;
 
 import java.util.List;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -23,6 +24,13 @@ public class GlobalExceptionHandler {
 		HttpStatus status = ex.getStatus();
 		return ResponseEntity.status(status)
 				.body(ErrorResponse.of(status.value(), status.getReasonPhrase(), ex.getMessage()));
+	}
+
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+		String mensagem = IntegrityViolationMessageResolver.resolver(ex);
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+				.body(ErrorResponse.of(HttpStatus.CONFLICT.value(), "Conflict", mensagem));
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)

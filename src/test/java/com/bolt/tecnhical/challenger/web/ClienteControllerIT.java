@@ -118,7 +118,8 @@ class ClienteControllerIT {
 				.andExpect(jsonPath("$.nome").value("Maria Souza Atualizada"));
 
 		mockMvc.perform(delete("/api/clientes/{id}", id))
-				.andExpect(status().isNoContent());
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.mensagem").value("Cliente removido com sucesso"));
 
 		mockMvc.perform(get("/api/clientes/{id}", id))
 				.andExpect(status().isNotFound());

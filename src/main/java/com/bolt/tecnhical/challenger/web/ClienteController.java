@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bolt.tecnhical.challenger.service.ClienteService;
 import com.bolt.tecnhical.challenger.web.dto.ClienteRequest;
 import com.bolt.tecnhical.challenger.web.dto.ClienteResponse;
+import com.bolt.tecnhical.challenger.web.dto.MensagemResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,9 +50,9 @@ public class ClienteController {
 
 	@Operation(summary = "Remover cliente (exclusão lógica)")
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> remover(@PathVariable Long id) {
+	public ResponseEntity<MensagemResponse> remover(@PathVariable Long id) {
 		clienteService.remover(id);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.ok(new MensagemResponse("Cliente removido com sucesso"));
 	}
 
 	@Operation(summary = "Listar todos os clientes ativos")

@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
+
 import com.bolt.tecnhical.challenger.domain.Cliente;
 import com.bolt.tecnhical.challenger.domain.Endereco;
 import com.bolt.tecnhical.challenger.domain.UnidadeConsumidora;
@@ -32,14 +34,17 @@ public class ClienteService {
 	private final ClienteRepository clienteRepository;
 	private final UnidadeConsumidoraRepository unidadeConsumidoraRepository;
 	private final ViaCepClient viaCepClient;
+	private final EntityManager entityManager;
 
 	public ClienteService(
 			ClienteRepository clienteRepository,
 			UnidadeConsumidoraRepository unidadeConsumidoraRepository,
-			ViaCepClient viaCepClient) {
+			ViaCepClient viaCepClient,
+			EntityManager entityManager) {
 		this.clienteRepository = clienteRepository;
 		this.unidadeConsumidoraRepository = unidadeConsumidoraRepository;
 		this.viaCepClient = viaCepClient;
+		this.entityManager = entityManager;
 	}
 
 	@Transactional
@@ -68,8 +73,7 @@ public class ClienteService {
 		cliente.setNome(request.nome().trim());
 		cliente.setDocumento(documento);
 		cliente.setEndereco(resolverEndereco(request.endereco()));
-		cliente.getUnidadesConsumidoras().clear();
-		adicionarUnidades(cliente, request.unidadesConsumidoras());
+		substituirUnidadesConsumidoras(cliente, request.unidadesConsumidoras());
 
 		Cliente salvo = clienteRepository.save(cliente);
 		return ClienteResponse.from(salvo);
@@ -139,6 +143,12 @@ public class ClienteService {
 						HttpStatus.CONFLICT);
 			}
 		}
+	}
+
+	private void substituirUnidadesConsumidoras(Cliente cliente, List<UnidadeConsumidoraRequest> unidades) {
+		cliente.getUnidadesConsumidoras().clear();
+		entityManager.flush();
+		adicionarUnidades(cliente, unidades);
 	}
 
 	private void adicionarUnidades(Cliente cliente, List<UnidadeConsumidoraRequest> unidades) {
