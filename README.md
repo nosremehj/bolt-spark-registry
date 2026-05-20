@@ -1,44 +1,36 @@
-# Cadastro de Clientes 
 
-API REST para cadastro, manutenção, remoção lógica e consulta de clientes com unidades consumidoras.
+# Project Title
 
-## Tecnologias
+A aplicação é uma API REST de cadastro de clientes, com foco em clientes que possuem unidades consumidoras (UCs) — cenário típico de energia/utilities.
 
-- Java 17
-- Spring Boot 4
-- Spring Data JPA / Hibernate
-- Flyway + H2 (embarcado)
-- Spring Validation
-- SpringDoc OpenAPI (Swagger)
-- Spring Security (JWT stateless, mock de usuários)
-- Apache Kafka (apenas produtor)
-- Maven
 
-## Campo documento
+## Pré-requisitos 
+Para executar o projeto, será necessário instalar os seguintes programas:
 
-O campo `documento` representa **CPF** (11 dígitos numéricos) ou **CNPJ** (14 caracteres), único por cliente.
+-JDK 17 -Maven 3.6.3 -Docker Desktop
 
-- **CPF:** apenas números (máscara opcional).
-- **CNPJ numérico (legado):** 14 dígitos.
-- **CNPJ alfanumérico (novas inscrições a partir de jul/2026):** 12 primeiros caracteres alfanuméricos (`0-9`, `A-Z`) + 2 dígitos verificadores numéricos. Armazenado em maiúsculas, sem pontuação.
+```bash
+ mvn clean install
+```
+O comando irá baixar todas as dependências do projeto e criar um diretório target  com os artefatos construídos, que incluem o arquivo jar do projeto. Além disso, serão executados os testes unitários, e se algum falhar, o Maven exibirá essa informação no console.
 
 ## Como executar
 
-Pré-requisitos: JDK 17+, Maven (ou `./mvnw`) e [Docker](https://www.docker.com/) para o Kafka local.
-
-### 1. Subir o Kafka
-
-```bash
+Subir o Kafka
+```
 docker compose up -d
 ```
 
-O broker fica em `localhost:9092`. O tópico `analise_cliente_mg` é criado automaticamente na primeira publicação.
+Ele irá baixar a imagem e iniciar o componente.
 
-### 2. Subir a API
+O broker fica em localhost:9092. O tópico analise_cliente_mg é criado automaticamente na primeira publicação.
 
-```bash
+Subir a API
+```
 ./mvnw spring-boot:run
 ```
+
+Você também pode usar uma IDE que suporte o desenvolvimento de JAVA+SPRING para rodar a API. Basta ir ao arquivo "ChallengerApplication.Java" e clicar em "RUN".
 
 Variáveis opcionais:
 
@@ -53,18 +45,29 @@ Variáveis opcionais:
 
 A aplicação sobe na porta **8082**.
 
-### Autenticação (JWT)
+## Autenticação (JWT)
 
-1. `POST /api/auth/login` com corpo `{ "username": "...", "password": "..." }`.
-2. Resposta: `{ "accessToken", "tokenType": "Bearer", "expiresInSeconds": 3600 }` (token válido por **1 hora**).
-3. Envie `Authorization: Bearer <accessToken>` nas rotas `/api/clientes/**`.
+A API conta com o Spring Security para assegurar as rotas criadas. Também existe a diferença entre perfil de ADMIN e CLIENTE.
+Sendo elas:
 
-**Perfis mock**
+*admin*: Pode acessar e utilizar todas as rotas.
+
+*cliente*: Pode acessar apenas rotas de criar, listar por id(apenas os ids que foram criados por ele), atualizar(apenas os dados que foram criados por ele) e o delete lógico apenas dos dados que ele criou. 
 
 | Usuário | Senha padrão | Permissões |
 |---------|----------------|------------|
 | `admin` | `admin123` | Todas as rotas (listar todos, recentes, inativos, buscar por id, cadastrar, atualizar, remover). |
 | `cliente` | `cliente123` | **POST** cadastrar, **GET/PUT/DELETE** `/api/clientes/{id}` apenas para clientes que **ele próprio** cadastrou nesta execução (rastreio em memória). Não acessa listagens globais (`/api/clientes`, `/recentes`, `/inativos`). |
+
+Para os testes é necessário fazer a autenticação JWT para receber o token de acess. Atualmente a sessão tem uma duração de 1hora para fazer testes. 
+
+    1. `POST /api/auth/login` com corpo `{ "username": "...", "password": "..." }`.
+    2. Resposta: `{ "accessToken", "tokenType": "Bearer", "expiresInSeconds": 3600 }` (token válido por **1 hora**).
+    3. Envie `Authorization: Bearer <accessToken>` nas rotas `/api/clientes/**`.
+
+*Caso não tenha o postman instalado ou outro programa para testes de aplicação back end, pode se utilizar o Swagger que está implementando na API.*
+
+*Para consultar o bando de dados acesse a url abaixo do banco H2.*
 
 No Swagger: **Authorize** → esquema `bearer-jwt` → cole o token após o login.
 
@@ -72,13 +75,16 @@ No Swagger: **Authorize** → esquema `bearer-jwt` → cole o token após o logi
 - OpenAPI JSON: http://localhost:8082/v3/api-docs
 - Console H2: http://localhost:8082/h2-console (JDBC URL: `jdbc:h2:mem:challenger`)
 
-## Testes
+## Postman
 
-```bash
-./mvnw test
-```
+Você pode importar a coleção que está dentro do projeto. 
+Você vai abrir a página do postman, vai ir no canto superior esquerdo nos três "pontinhos". 
 
-## API
+Após isso vá em import, irá abrir uma janela. Você pode abrir o `postman/challenger-clientes.postman_collection.json` onde está o arquivo e arrastar para essa janela ou clicar em files e ir até o `postman/challenger-clientes.postman_collection.json`, selecionar e abrir. 
+
+Após isso ele irá carregar toda a configuração da coleção e você conseguirá fazer os testes via postman. 
+
+## Um pouco sobre a API e o projeto
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
@@ -103,7 +109,7 @@ Os endereços (cliente e unidades) são resolvidos via [ViaCEP](https://viacep.c
 
 ## Kafka (`analise_cliente_mg`)
 
-Fluxo enxuto, apenas **produtor** (o enunciado não exige consumer na aplicação):
+Fluxo enxuto, apenas **produtor**:
 
 1. `ClienteService` chama `AnaliseClienteMgNotifier` após salvar o cliente (na mesma transação).
 2. Se houver UC em MG, `KafkaAnaliseClienteMgNotifier` publica de forma **síncrona** via `AnaliseClienteMgKafkaProducer` (timeout configurável).
@@ -114,20 +120,17 @@ Propriedades úteis: `app.kafka.send-timeout-seconds` (padrão 5); o produtor us
 
 Para validar manualmente (com Kafka e API rodando), cadastre um cliente com endereço/UC em MG e consuma o tópico:
 
+*Rode esse comando para visualizar o consumo do tópico.*
+
 ```bash
 docker exec -it challenger-kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 \
   --topic analise_cliente_mg \
   --from-beginning
 ```
+Caso você queira optar por práticidade, fiz um arquivo .bat que já está com esse comando e você pode rodar para testar.
+`TopicoKafka.bat` (atalho).
 
-No Windows, o mesmo comando está em `TopicoKafka.bat` (atalho).
-
-Nos testes automatizados o Kafka fica desabilitado (`app.kafka.enabled=false`).
-
-## Postman
-
-Importe a coleção em `postman/challenger-clientes.postman_collection.json`.
 
 ## Estrutura do projeto
 
