@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -83,6 +84,27 @@ class ClienteServiceTest {
 		assertThat(response.nome()).isEqualTo("João Silva");
 		assertThat(response.unidadesConsumidoras()).hasSize(1);
 		assertThat(response.unidadesConsumidoras().get(0).numeroInstalacao()).isEqualTo("INST-1001");
+	}
+
+	@Test
+	void deveListarApenasClientesInativos() {
+		Cliente inativo = clienteComUnidade("52998224725", "INST-1001");
+		inativo.setAtivo(false);
+		when(clienteRepository.findAllInativosWithUnidades()).thenReturn(List.of(inativo));
+
+		var resposta = clienteService.listarInativos();
+
+		assertThat(resposta).hasSize(1);
+		assertThat(resposta.get(0).ativo()).isFalse();
+		assertThat(resposta.get(0).documento()).isEqualTo("52998224725");
+		verify(clienteRepository).findAllInativosWithUnidades();
+	}
+
+	@Test
+	void deveRetornarListaVaziaQuandoNaoHouverInativos() {
+		when(clienteRepository.findAllInativosWithUnidades()).thenReturn(Collections.emptyList());
+
+		assertThat(clienteService.listarInativos()).isEmpty();
 	}
 
 	@Test

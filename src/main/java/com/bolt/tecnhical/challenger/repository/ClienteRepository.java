@@ -36,4 +36,12 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 			""")
 	List<Cliente> findUltimosAtivosWithUnidades(Pageable pageable);
 
+	@Query("""
+			SELECT DISTINCT c FROM Cliente c
+			LEFT JOIN FETCH c.unidadesConsumidoras
+			WHERE c.ativo = false
+			ORDER BY c.updatedAt DESC
+			""")
+	List<Cliente> findAllInativosWithUnidades();
+
 }

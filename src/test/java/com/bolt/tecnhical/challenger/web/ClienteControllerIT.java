@@ -123,6 +123,16 @@ class ClienteControllerIT {
 
 		mockMvc.perform(get("/api/clientes/{id}", id))
 				.andExpect(status().isNotFound());
+
+		mockMvc.perform(get("/api/clientes/inativos"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].id").value(id))
+				.andExpect(jsonPath("$[0].ativo").value(false))
+				.andExpect(jsonPath("$[0].nome").value("Maria Souza Atualizada"));
+
+		mockMvc.perform(get("/api/clientes"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$").isEmpty());
 	}
 
 	@Test

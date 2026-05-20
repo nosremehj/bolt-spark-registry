@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "bolt-challenger-clientes",
     "name": "Bolt Challenger - Cadastro de Clientes",
-    "description": "Coleção para testar a API REST do desafio técnico.\n\n**Pré-requisito:** aplicação rodando em http://localhost:8082\n```bash\n./mvnw spring-boot:run\n```\n\n**Ordem sugerida:** pasta \"Fluxo principal\" (1 → 7).\n\n**ViaCEP:** cadastros usam CEPs reais; é necessário acesso à internet. As respostas incluem campos extras do ViaCEP (unidade, estado, região, IBGE, GIA, DDD, SIAFI); quando vazios, retornam textos como \"Sem unidade\" ou \"Sem GIA\".",
+    "description": "Coleção para testar a API REST do desafio técnico.\n\n**Pré-requisito:** aplicação rodando em http://localhost:8082\n```bash\n./mvnw spring-boot:run\n```\n\n**Ordem sugerida:** pasta \"Fluxo principal\" (1 → 8).\n\n**ViaCEP:** cadastros usam CEPs reais; é necessário acesso à internet. As respostas incluem campos extras do ViaCEP (unidade, estado, região, IBGE, GIA, DDD, SIAFI); quando vazios, retornam textos como \"Sem unidade\" ou \"Sem GIA\".",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -74,7 +74,7 @@
   "item": [
     {
       "name": "Fluxo principal",
-      "description": "Execute na ordem numérica. O passo 1 grava automaticamente o {{clienteId}}.",
+      "description": "Execute na ordem numérica. O passo 1 grava automaticamente o {{clienteId}}. O passo 8 lista clientes com exclusão lógica.",
       "item": [
         {
           "name": "1. Cadastrar cliente (MG)",
@@ -282,7 +282,35 @@
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/api/clientes/{{clienteId}}",
-            "description": "Cliente inativo não aparece nas consultas."
+            "description": "Cliente inativo não aparece nas consultas por ID."
+          },
+          "response": []
+        },
+        {
+          "name": "8. Listar clientes inativos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "const lista = pm.response.json();",
+                  "pm.test('Cliente removido aparece como inativo', () => {",
+                  "    const cliente = lista.find((c) => c.id === Number(pm.collectionVariables.get('clienteId')));",
+                  "    pm.expect(cliente).to.not.be.undefined;",
+                  "    pm.expect(cliente.ativo).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/clientes/inativos",
+            "description": "Lista clientes com ativo = false, ordenados por data de atualização (mais recentes primeiro)."
           },
           "response": []
         }

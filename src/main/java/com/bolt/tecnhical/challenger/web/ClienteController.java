@@ -67,6 +67,12 @@ public class ClienteController {
 		return ResponseEntity.ok(clienteService.listarUltimosCadastrados());
 	}
 
+	@Operation(summary = "Listar clientes com exclusão lógica (inativos)")
+	@GetMapping("/inativos")
+	public ResponseEntity<List<ClienteResponse>> listarInativos() {
+		return ResponseEntity.ok(clienteService.listarInativos());
+	}
+
 	@Operation(summary = "Buscar cliente por ID")
 	@GetMapping("/{id}")
 	public ResponseEntity<ClienteResponse> buscarPorId(@PathVariable Long id) {

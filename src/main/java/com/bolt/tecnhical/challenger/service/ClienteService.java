@@ -106,6 +106,13 @@ public class ClienteService {
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
+	public List<ClienteResponse> listarInativos() {
+		return clienteRepository.findAllInativosWithUnidades().stream()
+				.map(ClienteResponse::from)
+				.toList();
+	}
+
 	private Cliente buscarClienteAtivo(Long id) {
 		return clienteRepository.findByIdAndAtivoTrue(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado: " + id));
