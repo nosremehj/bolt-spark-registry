@@ -249,7 +249,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 204 No Content', () => pm.response.to.have.status(204));"
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna mensagem de exclusão', () => {",
+                  "    pm.expect(pm.response.json().mensagem).to.eql('Cliente removido com sucesso');",
+                  "});"
                 ]
               }
             }
