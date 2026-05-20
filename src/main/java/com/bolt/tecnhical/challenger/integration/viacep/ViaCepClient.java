@@ -32,6 +32,13 @@ public class ViaCepClient {
 		endereco.setCidade(response.cidade());
 		endereco.setUf(response.uf());
 		endereco.setComplemento(resolverComplemento(complementoInformado, response.complemento()));
+		endereco.setUnidade(valorOuNulo(response.unidade()));
+		endereco.setEstado(valorOuNulo(response.estado()));
+		endereco.setRegiao(valorOuNulo(response.regiao()));
+		endereco.setIbge(valorOuNulo(response.ibge()));
+		endereco.setGia(valorOuNulo(response.gia()));
+		endereco.setDdd(valorOuNulo(response.ddd()));
+		endereco.setSiafi(valorOuNulo(response.siafi()));
 		return endereco;
 	}
 
@@ -55,6 +62,13 @@ public class ViaCepClient {
 			return doViaCep.trim();
 		}
 		return null;
+	}
+
+	private String valorOuNulo(String valor) {
+		if (valor == null || valor.isBlank()) {
+			return null;
+		}
+		return valor.trim();
 	}
 
 }

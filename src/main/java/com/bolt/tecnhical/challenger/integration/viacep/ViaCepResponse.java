@@ -6,9 +6,16 @@ public record ViaCepResponse(
 		String cep,
 		String logradouro,
 		String complemento,
+		String unidade,
 		String bairro,
 		@JsonProperty("localidade") String cidade,
 		String uf,
+		String estado,
+		String regiao,
+		String ibge,
+		String gia,
+		String ddd,
+		String siafi,
 		String erro) {
 
 	public boolean cepInvalido() {

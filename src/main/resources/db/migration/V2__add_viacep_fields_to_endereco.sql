@@ -1,0 +1,15 @@
+ALTER TABLE cliente ADD COLUMN unidade VARCHAR(255);
+ALTER TABLE cliente ADD COLUMN estado VARCHAR(100);
+ALTER TABLE cliente ADD COLUMN regiao VARCHAR(50);
+ALTER TABLE cliente ADD COLUMN ibge VARCHAR(20);
+ALTER TABLE cliente ADD COLUMN gia VARCHAR(20);
+ALTER TABLE cliente ADD COLUMN ddd VARCHAR(5);
+ALTER TABLE cliente ADD COLUMN siafi VARCHAR(20);
+
+ALTER TABLE unidade_consumidora ADD COLUMN unidade VARCHAR(255);
+ALTER TABLE unidade_consumidora ADD COLUMN estado VARCHAR(100);
+ALTER TABLE unidade_consumidora ADD COLUMN regiao VARCHAR(50);
+ALTER TABLE unidade_consumidora ADD COLUMN ibge VARCHAR(20);
+ALTER TABLE unidade_consumidora ADD COLUMN gia VARCHAR(20);
+ALTER TABLE unidade_consumidora ADD COLUMN ddd VARCHAR(5);
+ALTER TABLE unidade_consumidora ADD COLUMN siafi VARCHAR(20);
