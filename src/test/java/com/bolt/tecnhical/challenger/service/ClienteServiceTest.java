@@ -31,6 +31,7 @@ import com.bolt.tecnhical.challenger.integration.viacep.ViaCepClient;
 import com.bolt.tecnhical.challenger.messaging.AnaliseClienteMgNotifier;
 import com.bolt.tecnhical.challenger.repository.ClienteRepository;
 import com.bolt.tecnhical.challenger.repository.UnidadeConsumidoraRepository;
+import com.bolt.tecnhical.challenger.security.ClienteOwnershipRecorder;
 import com.bolt.tecnhical.challenger.web.dto.ClienteRequest;
 import com.bolt.tecnhical.challenger.web.dto.EnderecoRequest;
 import com.bolt.tecnhical.challenger.web.dto.UnidadeConsumidoraRequest;
@@ -52,6 +53,9 @@ class ClienteServiceTest {
 
 	@Mock
 	private AnaliseClienteMgNotifier analiseClienteMgNotifier;
+
+	@Mock
+	private ClienteOwnershipRecorder ownershipRecorder;
 
 	@InjectMocks
 	private ClienteService clienteService;

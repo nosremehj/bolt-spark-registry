@@ -19,6 +19,7 @@ import com.bolt.tecnhical.challenger.exception.ResourceNotFoundException;
 import com.bolt.tecnhical.challenger.integration.viacep.ViaCepClient;
 import com.bolt.tecnhical.challenger.messaging.AnaliseClienteMgNotifier;
 import com.bolt.tecnhical.challenger.repository.ClienteRepository;
+import com.bolt.tecnhical.challenger.security.ClienteOwnershipRecorder;
 import com.bolt.tecnhical.challenger.repository.UnidadeConsumidoraRepository;
 import com.bolt.tecnhical.challenger.util.DocumentoUtil;
 import com.bolt.tecnhical.challenger.util.EstadoUtil;
@@ -37,18 +38,21 @@ public class ClienteService {
 	private final ViaCepClient viaCepClient;
 	private final EntityManager entityManager;
 	private final AnaliseClienteMgNotifier analiseClienteMgNotifier;
+	private final ClienteOwnershipRecorder ownershipRecorder;
 
 	public ClienteService(
 			ClienteRepository clienteRepository,
 			UnidadeConsumidoraRepository unidadeConsumidoraRepository,
 			ViaCepClient viaCepClient,
 			EntityManager entityManager,
-			AnaliseClienteMgNotifier analiseClienteMgNotifier) {
+			AnaliseClienteMgNotifier analiseClienteMgNotifier,
+			ClienteOwnershipRecorder ownershipRecorder) {
 		this.clienteRepository = clienteRepository;
 		this.unidadeConsumidoraRepository = unidadeConsumidoraRepository;
 		this.viaCepClient = viaCepClient;
 		this.entityManager = entityManager;
 		this.analiseClienteMgNotifier = analiseClienteMgNotifier;
+		this.ownershipRecorder = ownershipRecorder;
 	}
 
 	@Transactional
@@ -64,6 +68,7 @@ public class ClienteService {
 		adicionarUnidades(cliente, request.unidadesConsumidoras());
 
 		Cliente salvo = clienteRepository.save(cliente);
+		ownershipRecorder.registrarSePerfilCliente(salvo.getId());
 		analiseClienteMgNotifier.notificarSeNecessario(salvo);
 		return ClienteResponse.from(salvo);
 	}

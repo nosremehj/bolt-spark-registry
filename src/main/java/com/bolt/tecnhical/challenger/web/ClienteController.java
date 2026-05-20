@@ -13,24 +13,29 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bolt.tecnhical.challenger.security.ClienteConsultaPolicy;
 import com.bolt.tecnhical.challenger.service.ClienteService;
 import com.bolt.tecnhical.challenger.web.dto.ClienteRequest;
 import com.bolt.tecnhical.challenger.web.dto.ClienteResponse;
 import com.bolt.tecnhical.challenger.web.dto.MensagemResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @Tag(name = "Clientes", description = "Cadastro e manutenção de clientes")
+@SecurityRequirement(name = "bearer-jwt")
 @RestController
 @RequestMapping("/api/clientes")
 public class ClienteController {
 
 	private final ClienteService clienteService;
+	private final ClienteConsultaPolicy clienteConsultaPolicy;
 
-	public ClienteController(ClienteService clienteService) {
+	public ClienteController(ClienteService clienteService, ClienteConsultaPolicy clienteConsultaPolicy) {
 		this.clienteService = clienteService;
+		this.clienteConsultaPolicy = clienteConsultaPolicy;
 	}
 
 	@Operation(summary = "Cadastrar cliente")
@@ -45,12 +50,14 @@ public class ClienteController {
 	public ResponseEntity<ClienteResponse> atualizar(
 			@PathVariable Long id,
 			@Valid @RequestBody ClienteRequest request) {
+		clienteConsultaPolicy.garantirPodeAtualizarPorId(id);
 		return ResponseEntity.ok(clienteService.atualizar(id, request));
 	}
 
 	@Operation(summary = "Remover cliente (exclusão lógica)")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<MensagemResponse> remover(@PathVariable Long id) {
+		clienteConsultaPolicy.garantirPodeRemoverPorId(id);
 		clienteService.remover(id);
 		return ResponseEntity.ok(new MensagemResponse("Cliente removido com sucesso"));
 	}
@@ -76,6 +83,7 @@ public class ClienteController {
 	@Operation(summary = "Buscar cliente por ID")
 	@GetMapping("/{id}")
 	public ResponseEntity<ClienteResponse> buscarPorId(@PathVariable Long id) {
+		clienteConsultaPolicy.garantirPodeConsultarPorId(id);
 		return ResponseEntity.ok(clienteService.buscarPorId(id));
 	}
 
