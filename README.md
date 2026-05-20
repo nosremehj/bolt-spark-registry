@@ -38,7 +38,7 @@ Variáveis opcionais:
 |----------|--------|-----------|
 | `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | Brokers Kafka |
 | `APP_KAFKA_ENABLED` | `true` | `false` desliga o produtor (útil sem broker) |
-| `JWT_SECRET` | (valor em `application.properties`) | Segredo HS256 — mínimo 32 bytes em UTF-8; **altere em produção** |
+| `JWT_SECRET` | (valor em `application.properties`) | Segredo HS256 — mínimo 32 bytes em UTF-8|
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | `admin` / `admin123` | Usuário mock com perfil **admin** |
 | `CLIENTE_USERNAME` / `CLIENTE_PASSWORD` | `cliente` / `cliente123` | Usuário mock com perfil **cliente** |
 | `APP_SECURITY_ENABLED` | `true` | `false` desliga JWT e libera todos os endpoints (útil em testes locais) |
